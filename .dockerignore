@@ -1,0 +1,30 @@
+# Build artifacts do Maven
+target/
+!.dockerignore
+!target/spring-boot-docker-0.0.1-SNAPSHOT.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Logs e temporários
+*.log
+logs/
+tmp/
+
+# Docker
+Dockerfile
+docker-compose.yml
+
+# Sistema
+.DS_Store
+Thumbs.db

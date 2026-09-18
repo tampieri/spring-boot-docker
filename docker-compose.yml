@@ -1,0 +1,63 @@
+# Versão do schema do Compose. A partir da v3.x não é mais obrigatório
+# declarar, mas deixamos por clareza.
+version: "3.9"
+
+services:
+  # Nome do serviço. Vira o DNS interno da rede.
+  # Outros containers podem acessar este por "api:8080".
+  api:
+    # Onde está o Dockerfile que vamos buildar.
+    # "." significa "no diretório deste docker-compose.yml".
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    # Nome fixo do container (sem isso, o Compose gera um nome aleatório).
+    container_name: spring-boot-docker-api
+
+    # Mapeamento de porta: HOST:CONTAINER
+    # 8080 (fora) → 8080 (dentro).
+    # Se a 8080 do host estiver ocupada, troque para "8081:8080".
+    ports:
+      - "8080:8080"
+
+    # Variáveis de ambiente passadas ao container.
+    # O Spring Boot lê automaticamente variáveis no formato SPRING_*,
+    # sobrescrevendo o application.properties.
+    environment:
+      # Sobrescreve a URL do datasource (útil se um dia trocar por Postgres).
+      SPRING_DATASOURCE_URL: "jdbc:h2:mem:promptdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
+      SPRING_PROFILES_ACTIVE: "default"
+      # Ativa logs mais verbosos do Spring para estudo.
+      LOGGING_LEVEL_BR_COM_SASATI: "DEBUG"
+
+    # Limita os recursos que o container pode usar.
+    # Deixa o -XX:MaxRAMPercentage trabalhar com um teto claro.
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+    # Healthcheck: o Docker executa um comando periódico para saber
+    # se o container está saudável. Útil para o Compose saber quando
+    # o container está "pronto" antes de subir dependências.
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+    # Política de restart: reinicia automaticamente se o container
+    # cair (útil em produção; em dev você pode comentar).
+    restart: unless-stopped
+
+    # Redes em que o serviço participa.
+    networks:
+      - app-network
+
+# Declaração das redes nomeadas.
+networks:
+  app-network:
+    driver: bridge
