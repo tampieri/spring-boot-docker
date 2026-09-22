@@ -21,7 +21,7 @@
 # deixa a imagem final bem enxuta (~180 MB em vez de ~450 MB).
 #
 # Só precisamos do JRE porque o JAR já vem compilado.
-FROM eclipse-temurin:24-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 
 
 # ---------- METADADOS (opcional, boa prática) ----------

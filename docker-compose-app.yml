@@ -4,38 +4,6 @@ version: "3.9"
 
 services:
   # Nome do serviço. Vira o DNS interno da rede.
-  # Outros containers podem acessar este por "postgres:5432".
-  postgres:
-    image: postgres:16-alpine
-    container_name: spring-boot-docker-postgres
-
-    environment:
-      POSTGRES_DB: promptdb
-      POSTGRES_USER: prompt_user
-      POSTGRES_PASSWORD: prompt_pass
-
-    ports:
-      - "5432:5432"
-
-    # Volume nomeado: garante que os dados do banco sobrevivem
-    # mesmo se o container for removido (docker-compose down sem -v).
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-
-    # Healthcheck específico do Postgres: usa o próprio utilitário
-    # pg_isready pra saber quando o banco está pronto pra aceitar conexões.
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U prompt_user -d promptdb"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-    restart: unless-stopped
-
-    networks:
-      - app-network
-
-  # Nome do serviço. Vira o DNS interno da rede.
   # Outros containers podem acessar este por "api:8080".
   api:
     # Onde está o Dockerfile que vamos buildar.
@@ -47,12 +15,6 @@ services:
     # Nome fixo do container (sem isso, o Compose gera um nome aleatório).
     container_name: spring-boot-docker-api
 
-    # Só sobe a API depois que o Postgres responder "healthy",
-    # evitando o erro clássico de conexão recusada no boot.
-    depends_on:
-      postgres:
-        condition: service_healthy
-
     # Mapeamento de porta: HOST:CONTAINER
     # 8080 (fora) → 8080 (dentro).
     # Se a 8080 do host estiver ocupada, troque para "8081:8080".
@@ -63,12 +25,8 @@ services:
     # O Spring Boot lê automaticamente variáveis no formato SPRING_*,
     # sobrescrevendo o application.properties.
     environment:
-      # Agora aponta pro Postgres real (serviço "postgres" acima),
-      # não mais pro H2 em memória.
-      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/promptdb"
-      SPRING_DATASOURCE_USERNAME: "prompt_user"
-      SPRING_DATASOURCE_PASSWORD: "prompt_pass"
-      SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
+      # Sobrescreve a URL do datasource (útil se um dia trocar por Postgres).
+      SPRING_DATASOURCE_URL: "jdbc:h2:mem:promptdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
       SPRING_PROFILES_ACTIVE: "default"
       # Ativa logs mais verbosos do Spring para estudo.
       LOGGING_LEVEL_BR_COM_SASATI: "DEBUG"
@@ -103,7 +61,3 @@ services:
 networks:
   app-network:
     driver: bridge
-
-# Declaração dos volumes nomeados.
-volumes:
-  postgres-data:
